@@ -1,8 +1,11 @@
 package com.movie.booking.controller;
 
 import com.movie.booking.dto.request.BookTicketsRequest;
+import com.movie.booking.dto.request.BulkBookRequest;
+import com.movie.booking.dto.request.BulkCancelRequest;
 import com.movie.booking.dto.response.ApiResponse;
 import com.movie.booking.dto.response.BookingResponse;
+import com.movie.booking.dto.response.BulkCancelResponse;
 import com.movie.booking.entity.Booking;
 import com.movie.booking.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,11 +24,11 @@ import java.util.Map;
  * Booking lifecycle — end-customer (B2C) operations.
  *
  * POST    /api/bookings/{showId}          Book seats for a show
- * POST    /api/bookings/bulk              Bulk-book across multiple shows (atomic)
  * DELETE  /api/bookings/{bookingId}       Cancel a booking
- * POST    /api/bookings/bulk-cancel       Bulk-cancel multiple bookings
  * GET     /api/bookings/{bookingId}       Get a booking by ID
  * GET     /api/bookings/user/{userId}     List all bookings for a user
+ * POST    /api/bookings/bulk              Bulk-book across multiple shows (atomic)
+ * POST    /api/bookings/bulk-cancel       Bulk-cancel multiple bookings
  */
 @RestController
 @RequestMapping("/api/bookings")
@@ -100,4 +103,37 @@ public class BookingController {
                 .stream().map(BookingResponse::from).toList();
         return ResponseEntity.ok(ApiResponse.ok(bookings));
     }
+
+    @PostMapping("/bulk")
+    @Operation(
+            summary     = "Bulk-book across multiple shows  [B2C]",
+            description = "Books seats across multiple shows in a single atomic operation. " +
+                    "If any individual booking fails the entire batch is rolled back " +
+                    "and no seats are reserved."
+    )
+    public ResponseEntity<ApiResponse<List<BookingResponse>>> bulkBook(
+            @Valid @RequestBody BulkBookRequest req) {
+
+        List<Booking> bookings = bookingService.bulkBook(req);
+        List<BookingResponse> response = bookings.stream()
+                .map(BookingResponse::from)
+                .toList();
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/bulk-cancel")
+    @Operation(
+            summary     = "Bulk-cancel multiple bookings  [B2C]",
+            description = "Cancels multiple bookings in one request. Each cancellation is attempted " +
+                    "independently — partial failures are reported per booking without stopping the batch."
+    )
+    public ResponseEntity<ApiResponse<BulkCancelResponse>> bulkCancel(
+            @Valid @RequestBody BulkCancelRequest req) {
+
+        BulkCancelResponse result = bookingService.bulkCancel(req.getBookingIds());
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
 }

@@ -2,6 +2,8 @@ package com.movie.booking.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.movie.booking.dto.request.BookTicketsRequest;
+import com.movie.booking.dto.request.BulkBookRequest;
+import com.movie.booking.dto.response.BulkCancelResponse;
 import com.movie.booking.entity.Booking;
 import com.movie.booking.entity.BookingStatus;
 import com.movie.booking.entity.Seat;
@@ -126,4 +128,45 @@ public class BookingService {
     private static String uuid() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
     }
+
+    @Transactional
+    public List<Booking> bulkBook(BulkBookRequest req) {
+        List<Booking> results = new ArrayList<>();
+        for (BulkBookRequest.BookingItem item : req.getBookings()) {
+            BookTicketsRequest r = new BookTicketsRequest();
+            r.setUserId(item.getUserId());
+            r.setSeatIds(item.getSeatIds());
+            results.add(book(item.getShowId(), r));
+        }
+        return results;
+    }
+
+    public BulkCancelResponse bulkCancel(List<String> bookingIds) {
+        List<BulkCancelResponse.CancelResult> results = new ArrayList<>();
+        int succeeded = 0, failed = 0;
+
+        for (String id : bookingIds) {
+            BulkCancelResponse.CancelResult result = new BulkCancelResponse.CancelResult();
+            result.setBookingId(id);
+            try {
+                Booking b = cancel(id);
+                result.setSuccess(true);
+                result.setRefundAmount(b.getTotalAmount());
+                succeeded++;
+            } catch (Exception ex) {
+                result.setSuccess(false);
+                result.setErrorMessage(ex.getMessage());
+                failed++;
+            }
+            results.add(result);
+        }
+
+        BulkCancelResponse resp = new BulkCancelResponse();
+        resp.setTotalRequested(bookingIds.size());
+        resp.setSucceeded(succeeded);
+        resp.setFailed(failed);
+        resp.setResults(results);
+        return resp;
+    }
+
 }

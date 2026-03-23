@@ -46,17 +46,17 @@ public class DataSeeder {
             showService.createShow(buildShow(
                 pvr.getId(), scrPvr1,
                 "Dune: Part Three", "English", "Sci-Fi",
-                "2025-09-15", "14:00", "17:15", 350
+                "2026-03-26", "14:00", "17:15", 350
             ));
             showService.createShow(buildShow(
                 pvr.getId(), scrPvr2,
                 "Dhurandhar 2", "Hindi", "Adventure",
-                "2025-09-15", "19:30", "22:45", 250
+                "2026-03-23", "19:30", "22:45", 250
             ));
             showService.createShow(buildShow(
                 inox.getId(), scrInox1,
                 "3 Idiots", "Hindi", "Comedy",
-                "2025-09-15", "15:30", "18:45", 400
+                "2026-03-25", "15:30", "18:45", 400
             ));
            };
     }
